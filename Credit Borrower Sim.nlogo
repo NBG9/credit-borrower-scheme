@@ -1,4 +1,20 @@
-globals [ counter1 loans-given-with-ir-5 loans-given-with-ir-10 loans-given-with-ir-7-5 loans-refused simulation-running? customers-served current-loan-to-be-served current-credit-score gross-loan-amount]
+globals [
+  counter1
+  loans-given-with-ir-5
+  loans-given-with-ir-10
+  loans-given-with-ir-7-5
+  loans-refused
+  simulation-running?
+  customers-served
+  current-loan-to-be-served
+  current-credit-score
+  gross-loan-amount
+  ir-multiplier
+  credit-score-acceptance-treshold
+  total-loans-given
+  current-cycle-customers
+  prospected-returns
+]
 
 extensions[sound]
 
@@ -12,6 +28,7 @@ turtles-own [
   credit-score ; (Integer [300-850]) Higher credit scores are associated with lower credit risk. We can use credit score ranges to categorize applicants (e.g., excellent, good, fair, poor).
   proposed-loan ; ($) Ensure it aligns with their income and debt levels. Consider setting maximum limits based on income or using income multipliers.
   interest-rate ; (%) Higher credit scores might qualify for lower interest rates.
+  monthly-interest-fee ; (%) The monthly interest rate
   proposed-collateral-value ; ($) It serves as a security measure for the lender. Ensure the proposed collateral value is sufficient to cover the loan amount and provides a safety net for the lender in case of default.
   proposed-payoff-time ; (M) A shorter tenure may result in higher monthly payments but lower overall interest paid.
   employment-stability ; (Y) How long has the borrower been with their current employer? Employment stability is often associated with a steady income.
@@ -21,11 +38,30 @@ turtles-own [
 ]
 
 to setup
-
+  set customers-served 0
   clear-all
 ;  sound:play-sound "Local Forecast - Elevator.wav"
   file-open "log.txt"
   show quota
+
+  ; Control the interest rates based on economic conditions
+  if economic-conditions = "Recession" [
+    set ir-multiplier 0.75
+    set credit-score-acceptance-treshold 1.5
+  ]
+
+  if economic-conditions = "Stable" [
+    set ir-multiplier 1
+    set credit-score-acceptance-treshold 1
+  ]
+
+  if economic-conditions = "Boom" [
+    set ir-multiplier 1.5
+    set credit-score-acceptance-treshold 0.75
+  ]
+
+  set prospected-returns 0
+  set total-loans-given 0
   set gross-loan-amount 0
   set loans-given-with-ir-5 0
   set loans-given-with-ir-10 0
@@ -107,8 +143,9 @@ to setup
 end
 
 to go
+  set current-cycle-customers 0
   if simulation-running? [
-    while [customers-served < quota] [
+    while [current-cycle-customers < quota] [
       if simulation-running? [
         ask borrower[
           face patch 0 10
@@ -146,7 +183,6 @@ to go
       sound:stop-sound
 
   ]
-    set customers-served 0
 end
 
 to-report calculate-proposed-payoff-time [loan-proposed]
@@ -169,14 +205,16 @@ to-report calculate-proposed-payoff-time [loan-proposed]
   report ceiling(calculated-payoff-time / 6) * 6
 end
 
-
 to-report calculate-credit-score [ratio]
   let max-debt-to-income-ratio 0.4
   let min-credit-score 300
   let max-credit-score 850
   let raw-score min-credit-score + ((max-credit-score - min-credit-score) * (1 - (ratio / max-debt-to-income-ratio)))
-  report round(raw-score)
+  let temp = min max-credit-score raw-score
+  let temp2 = max min-credit-score temp
+  report round (temp2)
 end
+
 
 to show-dialog
     create-turtles 1[
@@ -188,11 +226,11 @@ end
 
 to move-until-target
   while [not at-target?] [
-    fd -1
+    fd -.45
 ;    wait (0.5 / speed) ; Adjust the wait time based on the speed slider
   ]
   set counter1 "Unavailable"
-  wait (15 / speed) ; Adjust the wait time based on the speed slider
+  wait (7.5 / speed) ; Adjust the wait time based on the speed slider
   evaluate-loan
   exit-bank
 end
@@ -215,7 +253,7 @@ to exit-bank
       set heading 90
       set counter1 "Available"
       while [not at-right-exit?] [
-        fd 1
+        fd .45
 ;        wait (0.5 / speed) ; Adjust the wait time based on the speed slider
       ]
       die
@@ -224,7 +262,7 @@ to exit-bank
       set heading -90
       set counter1 "Available"
       while [not at-left-exit?] [
-        fd 1
+        fd .45
 ;        wait (0.5 / speed) ; Adjust the wait time based on the speed slider
       ]
       die
@@ -245,62 +283,93 @@ to evaluate-loan
 
   if credit-score >= 750 [
     set interest-rate 5
+    set monthly-interest-fee (proposed-loan * 0.05) / 12
   ]
   if credit-score >= 600 and credit-score < 750 [
     set interest-rate 7.5
+    set monthly-interest-fee (proposed-loan * 0.075) / 12
   ]
   if credit-score >= 450 and credit-score < 600 [
     set interest-rate 10
+    set monthly-interest-fee (proposed-loan * 0.1) / 12
   ]
 
+  let total-payments proposed-payoff-time * 12
   let max-loan (monthly-income * 12 * 3)
+  let monthly-installments precision ((proposed-loan / proposed-payoff-time) + monthly-interest-fee) 3
+  let total-repayment monthly-installments * proposed-payoff-time
 
-  if credit-score >= 750 and debt-to-income-ratio <= 0.5 and proposed-loan <= max-loan and proposed-collateral-value >= proposed-loan and proposed-payoff-time <= 60 [
+  if credit-score >= 750 * credit-score-acceptance-treshold and debt-to-income-ratio <= 0.5 and proposed-loan <= max-loan and proposed-payoff-time <= 60 [
     set approved? true
     set loans-given-with-ir-5 loans-given-with-ir-5 + 1
     set gross-loan-amount gross-loan-amount + proposed-loan
-    output-print (word "Loan of: $" current-loan-to-be-served
-      "\ngiven at 5% Interest Rate. \nGood credit score of: " current-credit-score
+    set total-loans-given total-loans-given + 1
+    set prospected-returns prospected-returns + total-repayment
+    output-print (word "Customer no: " (customers-served + 1)
+      "\nLoan of: $" current-loan-to-be-served
+      "\ngiven at: " (ir-multiplier * 5)
+      "% Interest Rate. \nGood credit score of: " current-credit-score
       "\nSufficient monthly income of: $" monthly-income
       "\nCollateral value of: $" proposed-collateral-value
       "\nPayoff time: " proposed-payoff-time " months."
+      "\nPaid in installments of $" monthly-installments "."
+      "\nTotal value to be repaid $" total-repayment "."
+     "\nEconomic state: " economic-conditions "."
       "\n=======================================")
     file-print (word "Loan of $" current-loan-to-be-served " given at 5% Interest Rate. Good credit score of " current-credit-score ".")
   ]
 
-  if credit-score >= 600 and credit-score < 750 and debt-to-income-ratio <= 0.4 and proposed-loan <= max-loan and proposed-collateral-value >= proposed-loan and proposed-payoff-time <= 60 [
+  if credit-score >= 600 * credit-score-acceptance-treshold and credit-score < 750 * credit-score-acceptance-treshold and debt-to-income-ratio <= 0.4 and proposed-loan <= max-loan and proposed-payoff-time <= 60 [
     set approved? true
     set loans-given-with-ir-7-5 loans-given-with-ir-7-5 + 1
     set gross-loan-amount gross-loan-amount + proposed-loan
-    output-print (word "Loan of: $" current-loan-to-be-served
-      "\ngiven at 7.5% Interest Rate. \nGood credit score of: " current-credit-score
+    set total-loans-given total-loans-given + 1
+    set prospected-returns prospected-returns + total-repayment
+    output-print (word "Customer no: " (customers-served + 1)
+      "\nLoan of: $" current-loan-to-be-served
+      "\ngiven at " (ir-multiplier * 7.5) "% Interest Rate. \nGood credit score of: " current-credit-score
       "\nSufficient monthly income of: $" monthly-income
       "\nCollateral value of: $" proposed-collateral-value
       "\nPayoff time: " proposed-payoff-time " months."
+      "\nPaid in installments of $" monthly-installments "."
+      "\nTotal value to be repaid $" total-repayment "."
+      "\nEconomic state: " economic-conditions "."
       "\n=======================================")
+
     file-print (word "Loan of $" current-loan-to-be-served " given at 7.5% Interest Rate. Good credit score of " current-credit-score ".")
   ]
 
-  if credit-score >= 450 and credit-score < 600 and debt-to-income-ratio <= 0.35 and proposed-loan <= max-loan and proposed-collateral-value >= proposed-loan and proposed-payoff-time <= 60 [
+  if credit-score >= 450 * credit-score-acceptance-treshold and credit-score < 600 * credit-score-acceptance-treshold and debt-to-income-ratio <= 0.35 and proposed-loan <= max-loan and proposed-payoff-time <= 60 [
     set approved? true
     set loans-given-with-ir-10 loans-given-with-ir-10 + 1
     set gross-loan-amount gross-loan-amount + proposed-loan
-    output-print (word "Loan of: $" current-loan-to-be-served
-      "\ngiven at 10% Interest Rate. \nGood credit score of: " current-credit-score
+    set total-loans-given total-loans-given + 1
+    set prospected-returns prospected-returns + total-repayment
+    output-print (word "Customer no: " (customers-served + 1)
+      "\nLoan of: $" current-loan-to-be-served
+      "\ngiven at " (ir-multiplier * 10) "% Interest Rate. \nGood credit score of: " current-credit-score
       "\nSufficient monthly income of: $" monthly-income
       "\nCollateral value of: $" proposed-collateral-value
       "\nPayoff time: " proposed-payoff-time " months."
+      "\nPaid in installments of $" monthly-installments "."
+      "\nTotal value to be repaid $" total-repayment "."
+      "\nEconomic state: " economic-conditions "."
       "\n=======================================")
+
     file-print (word "Loan of $" current-loan-to-be-served " given at 10% Interest Rate. Good credit score of " current-credit-score ".")
   ]
 
-  if credit-score < 450 [
+  if credit-score < 450 * credit-score-acceptance-treshold or debt-to-income-ratio > 0.5 or proposed-loan > max-loan or proposed-payoff-time > 60[
     set loans-refused loans-refused + 1
-    output-print (word "Loan of $" current-loan-to-be-served " refused. Bad credit score of " current-credit-score ".\n=======================================")
-    file-type (word "Loan of $" current-loan-to-be-served " refused. Bad credit score of " current-credit-score ".")
+    output-print (word "Customer no: " (customers-served + 1)
+      "\nLoan of $" current-loan-to-be-served
+      " refused.\nEconomic state: " economic-conditions
+      ".\n=======================================")
+    file-type (word "Loan of $" current-loan-to-be-served " refused.\nEconomic state: " economic-conditions ".\n=======================================")
   ]
 
   set customers-served customers-served + 1
+  set current-cycle-customers current-cycle-customers + 1
 end
 
 to halt-simulation
@@ -309,13 +378,13 @@ to halt-simulation
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-683
-10
-1366
-694
+679
+12
+1203
+537
 -1
 -1
-20.455
+15.64
 1
 10
 1
@@ -415,9 +484,9 @@ loans-refused
 
 PLOT
 0
-160
+157
 499
-497
+327
 Loans
 NIL
 NIL
@@ -470,8 +539,8 @@ SLIDER
 quota
 quota
 0
-50
-50.0
+100
+100.0
 1
 1
 Customers
@@ -480,24 +549,24 @@ HORIZONTAL
 OUTPUT
 0
 496
-678
-697
+499
+722
 13
 
 SLIDER
 500
-326
-533
-496
+504
+679
+537
 speed
 speed
 1
 100
-56.0
+100.0
 1
 1
 NIL
-VERTICAL
+HORIZONTAL
 
 MONITOR
 500
@@ -512,14 +581,93 @@ loans-given-with-ir-7-5
 
 MONITOR
 500
-281
+370
 679
-326
+415
 Amount Given In Loans
 (word \"$\"gross-loan-amount)
 17
 1
 11
+
+CHOOSER
+500
+459
+679
+504
+economic-conditions
+economic-conditions
+"Stable" "Recession" "Boom"
+0
+
+MONITOR
+500
+281
+679
+326
+Loans Given
+total-loans-given
+17
+1
+11
+
+MONITOR
+500
+326
+679
+371
+Loans Refused Ratio (%)
+round((loans-refused / customers-served) * 100)
+17
+1
+11
+
+PLOT
+0
+327
+499
+496
+Ratio of Refused Loans
+NIL
+NIL
+0.0
+0.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"Ratio" 1.0 0 -16777216 true "" "plot round((loans-refused / customers-served) * 100)"
+
+MONITOR
+500
+414
+679
+459
+Total Repayment
+(word \"$\" round(prospected-returns))
+17
+1
+11
+
+PLOT
+500
+537
+1203
+722
+Bank's Total Returns ($)
+Profit
+Time
+0.0
+100.0
+0.0
+600000.0
+false
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot prospected-returns"
 
 @#$#@#$#@
 ## WHAT IS IT?
