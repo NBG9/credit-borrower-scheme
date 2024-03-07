@@ -21736,4 +21736,179 @@ Economic state: Stable.
 Economic state: Stable.
 =======================================Loan of $13419 given at 5% Interest Rate. Good credit score of 400.
 Loan of $4472 given at 5% Interest Rate. Good credit score of 425.
-Loan of $3822 give
+Loan of $3822 giveLoan of $5771 refused.
+Economic state: Recession.
+=======================================Loan of $2963 refused.
+Economic state: Recession.
+=======================================Loan of $4521 given at 10% Interest Rate. Good credit score of 696.
+Loan of $5301 refused.
+Economic state: Recession.
+=======================================Loan of $6649 given at 10% Interest Rate. Good credit score of 762.
+Loan of $4101 refused.
+Economic state: Recession.
+=======================================Loan of $2192 given at 10% Interest Rate. Good credit score of 822.
+Loan of $5976 refused.
+Economic state: Recession.
+=======================================Loan of $2244 given at 10% Interest Rate. Good credit score of 800.
+Loan of $2014 refused.
+Economic state: Recession.
+=======================================Loan of $2345 refused.
+Economic state: Recession.
+=======================================Loan of $1704 refused.
+Economic state: Recession.
+=======================================Loan of $6424 refused.
+Economic state: Recession.
+=======================================Loan of $8124 refused.
+Economic state: Recession.
+=======================================Loan of $19769 refused.
+Economic state: Recession.
+=======================================Loan of $4838 refused.
+Economic state: Recession.
+=======================================Loan of $12153 refused.
+Economic state: Recession.
+=======================================Loan of $19826 refused.
+Economic state: Recession.
+=======================================Loan of $1764 refused.
+Economic state: Recession.
+=======================================Loan of $6992 refused.
+Economic state: Recession.
+=======================================Loan of $20586 refused.
+Economic state: Recession.
+=======================================Loan of $1825 refused.
+Economic state: Recession.
+=======================================Loan of $6989 refused.
+Economic state: Recession.
+=======================================Loan of $13386 given at 10% Interest Rate. Good credit score of 845.
+Loan of $16290 refused.
+Economic state: Recession.
+=======================================Loan of $4158 refused.
+Economic state: Recession.
+=======================================Loan of $12263 refused.
+Economic state: Recession.
+=======================================Loan of $11665 refused.
+Economic state: Recession.
+=======================================Loan of $8025 refused.
+Economic state: Recession.
+=======================================Loan of $8396 refused.
+Economic state: Recession.
+=======================================Loan of $2028 refused.
+Economic state: Recession.
+=======================================Loan of $9856 given at 10% Interest Rate. Good credit score of 788.
+Loan of $4866 refused.
+Economic state: Recession.
+=======================================Loan of $16616 refused.
+Economic state: Recession.
+=======================================Loan of $13335 given at 10% Interest Rate. Good credit score of 777.
+Loan of $18639 refused.
+Economic state: Recession.
+=======================================Loan of $8105 given at 10% Interest Rate. Good credit score of 827.
+Loan of $3673 given at 10% Interest Rate. Good credit score of 697.
+Loan of $6084 refused.
+Economic state: Recession.
+=======================================Loan of $2263 refused.
+Economic state: Recession.
+=======================================Loan of $5635 refused.
+Economic state: Recession.
+=======================================Loan of $2549 refused.
+Economic state: Recession.
+=======================================Loan of $12238 given at 10% Interest Rate. Good credit score of 704.
+Loan of $8923 refused.
+Economic state: Recession.
+=======================================Loan of $1487 refused.
+Economic state: Recession.
+=======================================Loan of $16978 refused.
+Economic state: Recession.
+=======================================Loan of $3038 refused.
+Economic state: Recession.
+=======================================Loan of $4907 refused.
+Economic state: Recession.
+=======================================Loan of $10672 refused.
+Economic state: Recession.
+=======================================Loan of $8734 refused.
+Economic state: Recession.
+=======================================Loan of $7887 refused.
+Economic state: Recession.
+=======================================Loan of $14703 refused.
+Economic state: Recession.
+=======================================Loan of $1764 given at 10% Interest Rate. Good credit score of 797.
+Loan of $10870 refused.
+Economic state: Recession.
+=======================================Loan of $1587 refused.
+Economic state: Recession.
+=======================================Loan of $19185 refused.
+Economic state: Recession.
+=======================================Loan of $1656 refused.
+Economic state: Recession.
+=======================================Loan of $10204 given at 10% Interest Rate. Good credit score of 757.
+Loan of $8894 refused.
+Economic state: Recession.
+=======================================Loan of $11584 refused.
+Economic state: Recession.
+=======================================Loan of $3087 refused.
+Economic state: Recession.
+=======================================Loan of $2567 refused.
+Economic state: Recession.
+=======================================Loan of $5821 refused.
+Economic state: Recession.
+=======================================Loan of $14337 refused.
+Economic state: Recession.
+=======================================Loan of $4752 refused.
+Economic state: Recession.
+=======================================Loan of $3354 given at 10% Interest Rate. Good credit score of 773.
+Loan of $15765 refused.
+Economic state: Recession.
+=======================================Loan of $6621 refused.
+Economic state: Recession.
+=======================================Loan of $2021 refused.
+Economic state: Recession.
+=======================================Loan of $11773 refused.
+Economic state: Recession.
+=======================================Loan of $9590 refused.
+Economic state: Recession.
+=======================================Loan of $7196 refused.
+Economic state: Recession.
+=======================================Loan of $18104 refused.
+Economic state: Recession.
+=======================================Loan of $7584 refused.
+Economic state: Recession.
+=======================================Loan of $16034 refused.
+Economic state: Recession.
+=======================================Loan of $14798 refused.
+Economic state: Recession.
+=======================================Loan of $4221 refused.
+Economic state: Recession.
+=======================================Loan of $5039 refused.
+Economic state: Recession.
+=======================================Loan of $9635 refused.
+Economic state: Recession.
+=======================================Loan of $1717 refused.
+Economic state: Recession.
+=======================================Loan of $2804 refused.
+Economic state: Recession.
+=======================================Loan of $1286 refused.
+Economic state: Recession.
+=======================================Loan of $7260 refused.
+Economic state: Recession.
+=======================================Loan of $12172 refused.
+Economic state: Recession.
+=======================================Loan of $18335 refused.
+Economic state: Recession.
+=======================================Loan of $7228 refused.
+Economic state: Recession.
+=======================================Loan of $9686 given at 10% Interest Rate. Good credit score of 737.
+Loan of $6087 refused.
+Economic state: Recession.
+=======================================Loan of $1865 refused.
+Economic state: Recession.
+=======================================Loan of $13983 refused.
+Economic state: Recession.
+=======================================Loan of $11583 given at 10% Interest Rate. Good credit score of 735.
+Loan of $3074 refused.
+Economic state: Recession.
+=======================================Loan of $7023 refused.
+Economic state: Recession.
+=======================================Loan of $2763 given at 10% Interest Rate. Good credit score of 727.
+Loan of $5703 given at 10% Interest Rate. Good credit score of 808.
+Loan of $6531 refused.
+Economic state: Recession.
+===============

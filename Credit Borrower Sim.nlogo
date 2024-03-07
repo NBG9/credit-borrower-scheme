@@ -406,7 +406,7 @@ to evaluate-loan
   ; only record those who got the loan approved
   if approved? [
   set bankrupt-chance random-float 1.0
-  set paid-rate random-float 1.0
+  set paid-rate random-float 0.99
 
   if bankrupt-chance < bankrupt-rate [
     set num-bankrupt num-bankrupt + 1
