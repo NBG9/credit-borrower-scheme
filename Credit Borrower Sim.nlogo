@@ -14,6 +14,18 @@ globals [
   total-loans-given
   current-cycle-customers
   prospected-returns
+
+  profit
+
+  unemployment-rate
+  bankrupt-rate
+
+  num-bankrupt
+  num-unemployment
+  num-default
+
+  default-value
+  bank-loss
 ]
 
 extensions[sound]
@@ -35,6 +47,13 @@ turtles-own [
   debt-payment-history ; (%) Aside from the debt-to-income ratio, consider the borrower's history of on-time payments for existing debts. Late payments or defaults may impact the decision.
   debt-to-income-ratio
   approved? ; (Bool)
+
+  unemployment-chance
+  bankrupt-chance
+  bankrupted?
+
+  spent-rate
+  paid-rate
 ]
 
 to setup
@@ -47,17 +66,26 @@ to setup
   ; Control the interest rates based on economic conditions
   if economic-conditions = "Recession" [
     set ir-multiplier 0.75
-    set credit-score-acceptance-treshold 1.5
+    set credit-score-acceptance-treshold 1.5 * carefulness
+
+    set unemployment-rate 0.5
+    set bankrupt-rate 0.6
   ]
 
   if economic-conditions = "Stable" [
     set ir-multiplier 1
-    set credit-score-acceptance-treshold 1
+    set credit-score-acceptance-treshold 1 * carefulness
+
+    set unemployment-rate 0.15
+    set bankrupt-rate 0.05
   ]
 
   if economic-conditions = "Boom" [
     set ir-multiplier 1.5
-    set credit-score-acceptance-treshold 0.75
+    set credit-score-acceptance-treshold 0.75 * carefulness
+
+    set unemployment-rate 0.05
+    set bankrupt-rate 0
   ]
 
   set prospected-returns 0
@@ -69,6 +97,7 @@ to setup
   set simulation-running? true
   set counter1 "Available"
   set customers-served 0
+
   ask patches [
     set pcolor [128 128 128]
   ]
@@ -128,6 +157,8 @@ to setup
   set current-loan-to-be-served proposed-loan
   set proposed-payoff-time calculate-proposed-payoff-time(proposed-loan)
   set approved? false
+  set bankrupted? false
+
   create-label
 ]
 
@@ -175,12 +206,13 @@ to go
         set current-loan-to-be-served proposed-loan
         set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
         set approved? false
+        set bankrupted? false
         create-label
       ]
 
       wait (1 / speed) ; Adjust the wait time based on the speed slider
       ]
-      sound:stop-sound
+      ; sound:stop-sound
 
   ]
 end
@@ -305,6 +337,7 @@ to evaluate-loan
     set gross-loan-amount gross-loan-amount + proposed-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
+    set profit profit + total-repayment - proposed-loan
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at: " (ir-multiplier * 5)
@@ -325,6 +358,7 @@ to evaluate-loan
     set gross-loan-amount gross-loan-amount + proposed-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
+    set profit profit + total-repayment - proposed-loan
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at " (ir-multiplier * 7.5) "% Interest Rate. \nGood credit score of: " current-credit-score
@@ -345,6 +379,7 @@ to evaluate-loan
     set gross-loan-amount gross-loan-amount + proposed-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
+    set profit profit + total-repayment - proposed-loan
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at " (ir-multiplier * 10) "% Interest Rate. \nGood credit score of: " current-credit-score
@@ -366,6 +401,47 @@ to evaluate-loan
       " refused.\nEconomic state: " economic-conditions
       ".\n=======================================")
     file-type (word "Loan of $" current-loan-to-be-served " refused.\nEconomic state: " economic-conditions ".\n=======================================")
+  ]
+
+  ; only record those who got the loan approved
+  if approved? [
+  set bankrupt-chance random-float 1.0
+  set paid-rate random-float 1.0
+
+  if bankrupt-chance < bankrupt-rate [
+    set num-bankrupt num-bankrupt + 1
+    set num-default num-default + 1
+
+    if total-repayment * (paid-rate) - total-repayment < 0 [
+        set default-value default-value + total-repayment - total-repayment * (paid-rate)
+      ]
+    if total-repayment * (paid-rate) - proposed-loan < 0 [
+        set bank-loss bank-loss - total-repayment * (paid-rate) + proposed-loan
+        set profit profit + total-repayment * (paid-rate) - proposed-loan
+      ]
+    set bankrupted? true
+  ]
+
+  set unemployment-chance random-float 1.0
+  set spent-rate random-float 1.0
+
+  if unemployment-chance < unemployment-rate - employment-stability [
+        set num-unemployment num-unemployment + 1
+
+  if not bankrupted?[
+      set proposed-collateral-value spent-rate * proposed-collateral-value
+      if total-repayment - total-repayment * (paid-rate) - proposed-collateral-value > 0 [
+        set num-default num-default + 1
+        set default-value default-value + total-repayment - total-repayment * (paid-rate) - proposed-collateral-value
+
+        if total-repayment * (paid-rate) - proposed-loan + proposed-collateral-value < 0 [
+            set bank-loss bank-loss - total-repayment * (paid-rate) + proposed-loan - proposed-collateral-value
+            set profit profit + total-repayment * (paid-rate) - proposed-loan + proposed-collateral-value
+          ]
+        ]
+     ]
+  ]
+
   ]
 
   set customers-served customers-served + 1
@@ -598,7 +674,7 @@ CHOOSER
 economic-conditions
 economic-conditions
 "Stable" "Recession" "Boom"
-0
+1
 
 MONITOR
 500
@@ -657,7 +733,7 @@ PLOT
 1203
 722
 Bank's Total Returns ($)
-Profit
+Revenue
 Time
 0.0
 100.0
@@ -668,6 +744,177 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot prospected-returns"
+
+PLOT
+1206
+10
+1406
+160
+num bankrupt
+NIL
+NIL
+0.0
+100.0
+0.0
+20.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-bankrupt"
+
+MONITOR
+1407
+10
+1529
+55
+NIL
+num-bankrupt
+17
+1
+11
+
+PLOT
+1205
+158
+1405
+308
+num unemployed
+NIL
+NIL
+0.0
+100.0
+0.0
+20.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-unemployment"
+
+MONITOR
+1407
+54
+1530
+99
+NIL
+num-unemployment
+17
+1
+11
+
+MONITOR
+1406
+99
+1530
+144
+NIL
+num-default
+17
+1
+11
+
+PLOT
+1206
+310
+1406
+460
+bank-loss
+NIL
+NIL
+0.0
+100.0
+0.0
+60000.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot bank-loss"
+
+PLOT
+1206
+462
+1406
+610
+profit
+NIL
+NIL
+0.0
+100.0
+-30000.0
+30000.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot profit"
+
+MONITOR
+1408
+146
+1533
+191
+NIL
+profit
+2
+1
+11
+
+PLOT
+1204
+612
+1404
+762
+default-value
+NIL
+NIL
+0.0
+100.0
+0.0
+10000.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot default-value"
+
+MONITOR
+1408
+193
+1534
+238
+NIL
+bank-loss
+2
+1
+11
+
+MONITOR
+1406
+241
+1533
+286
+NIL
+default-value
+2
+1
+11
+
+SLIDER
+0
+725
+194
+758
+carefulness
+carefulness
+0.01
+1.5
+1.02
+0.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
