@@ -337,7 +337,7 @@ to evaluate-loan
     set gross-loan-amount gross-loan-amount + proposed-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
-    set profit profit + total-repayment - proposed-loan
+    set profit profit + total-repayment - proposed-loan ; net profit
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at: " (ir-multiplier * 5)
@@ -674,7 +674,7 @@ CHOOSER
 economic-conditions
 economic-conditions
 "Stable" "Recession" "Boom"
-1
+2
 
 MONITOR
 500
@@ -903,14 +903,14 @@ default-value
 
 SLIDER
 0
-725
+726
 194
-758
+759
 carefulness
 carefulness
 0.01
 1.5
-1.02
+0.01
 0.01
 1
 NIL
