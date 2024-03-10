@@ -26,6 +26,9 @@ globals [
 
   default-value
   bank-loss
+
+  bankrupted?
+  interest
 ]
 
 extensions[sound]
@@ -50,7 +53,6 @@ turtles-own [
 
   unemployment-chance
   bankrupt-chance
-  bankrupted?
 
   spent-rate
   paid-rate
@@ -88,6 +90,8 @@ to setup
     set bankrupt-rate 0
   ]
 
+  set interest 0
+  set bankrupted? false
   set prospected-returns 0
   set total-loans-given 0
   set gross-loan-amount 0
@@ -130,45 +134,45 @@ to setup
   ]
 
   create-desk 1
-[
-  set shape "desk"
-  set size 8
-  setxy 0 10
-  set heading 0
-]
+  [
+    set shape "desk"
+    set size 8
+    setxy 0 10
+    set heading 0
+  ]
 
-    create-borrower 1
-[
-  set shape "person business"
-  set size 6
-  setxy 0 -10
-  set monthly-income random 5000 + 1000
-  set debt random-float 0.5 * monthly-income
+  create-borrower 1
+  [
+    set shape "person business"
+    set size 6
+    setxy 0 -10
+    set monthly-income random 5000 + 1000
+    set debt random-float 0.5 * monthly-income
 
-  let upper-limit-factor 4.5 ; Adjust this factor according to your needs
-  let upper-limit upper-limit-factor * monthly-income ; Upper limit as a factor of monthly income
-  set proposed-loan round(random (upper-limit - 1000) + 1000); Generates a random value between 1000 and the upper limit
+    let upper-limit-factor 4.5 ; Adjust this factor according to your needs
+    let upper-limit upper-limit-factor * monthly-income ; Upper limit as a factor of monthly income
+    set proposed-loan round(random (upper-limit - 1000) + 1000); Generates a random value between 1000 and the upper limit
 
-  set proposed-collateral-value round(proposed-loan * (1 + random-float 0.5) * 100) / 100
-  set debt-to-income-ratio debt / monthly-income
-  set credit-score calculate-credit-score debt-to-income-ratio
-  set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
-  set current-credit-score credit-score
-  set current-loan-to-be-served proposed-loan
-  set proposed-payoff-time calculate-proposed-payoff-time(proposed-loan)
-  set approved? false
-  set bankrupted? false
+    set proposed-collateral-value round(proposed-loan * (1 + random-float 0.5) * 100) / 100
+    set debt-to-income-ratio debt / monthly-income
+    set credit-score calculate-credit-score debt-to-income-ratio
+    set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
+    set current-credit-score credit-score
+    set current-loan-to-be-served proposed-loan
+    set proposed-payoff-time calculate-proposed-payoff-time(proposed-loan)
+    set approved? false
+    set bankrupted? false
 
-  create-label
-]
+    create-label
+  ]
 
   create-tenant 1
-[
-  set shape "person service"
-  set size 6
-  setxy 0 12.5
-  set color red
-]
+  [
+    set shape "person service"
+    set size 6
+    setxy 0 12.5
+    set color red
+  ]
 
   reset-ticks
 end
@@ -176,44 +180,46 @@ end
 to go
   set current-cycle-customers 0
   if simulation-running? [
-    while [current-cycle-customers < quota] [
-      if simulation-running? [
-        ask borrower[
-          face patch 0 10
-          move-until-target
+    if not bankrupted? [
+      while [current-cycle-customers < quota] [
+        if simulation-running? [
+          ask borrower[
+            face patch 0 10
+            move-until-target
+          ]
         ]
+        tick
+        create-borrower 1
+        [
+          set shape "person business"
+          set size 6
+          setxy 0 -10
+          set monthly-income random 5000 + 1000
+          set debt random-float 0.5 * monthly-income
+
+
+          let upper-limit-factor 4.5 ; Adjust this factor according to your needs
+          let upper-limit upper-limit-factor * monthly-income ; Upper limit as a factor of monthly income
+          set proposed-loan round(random (upper-limit - 1000) + 1000); Generates a random value between 1000 and the upper limit
+
+
+          set proposed-collateral-value round(proposed-loan * (1 + random-float 0.5) * 100) / 100
+          set debt-to-income-ratio debt / monthly-income
+          set credit-score calculate-credit-score debt-to-income-ratio
+          set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
+          set current-credit-score credit-score
+          set current-loan-to-be-served proposed-loan
+          set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
+          set approved? false
+          set bankrupted? false
+          create-label
+        ]
+
+        wait (1 / speed) ; Adjust the wait time based on the speed slider
       ]
-      tick
-      create-borrower 1
-      [
-        set shape "person business"
-        set size 6
-        setxy 0 -10
-        set monthly-income random 5000 + 1000
-        set debt random-float 0.5 * monthly-income
-
-
-        let upper-limit-factor 4.5 ; Adjust this factor according to your needs
-        let upper-limit upper-limit-factor * monthly-income ; Upper limit as a factor of monthly income
-        set proposed-loan round(random (upper-limit - 1000) + 1000); Generates a random value between 1000 and the upper limit
-
-
-        set proposed-collateral-value round(proposed-loan * (1 + random-float 0.5) * 100) / 100
-        set debt-to-income-ratio debt / monthly-income
-        set credit-score calculate-credit-score debt-to-income-ratio
-        set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
-        set current-credit-score credit-score
-        set current-loan-to-be-served proposed-loan
-        set proposed-payoff-time calculate-proposed-payoff-time proposed-loan
-        set approved? false
-        set bankrupted? false
-        create-label
-      ]
-
-      wait (1 / speed) ; Adjust the wait time based on the speed slider
-      ]
+      end-of-day-evaluation
       ; sound:stop-sound
-
+    ]
   ]
 end
 
@@ -246,7 +252,6 @@ to-report calculate-credit-score [ratio]
   let temp2 = max min-credit-score temp
   report round (temp2)
 end
-
 
 to show-dialog
     create-turtles 1[
@@ -338,6 +343,7 @@ to evaluate-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
     set profit profit + total-repayment - proposed-loan ; net profit
+    set interest interest + (proposed-loan * (interest-rate / 100))
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at: " (ir-multiplier * 5)
@@ -359,6 +365,7 @@ to evaluate-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
     set profit profit + total-repayment - proposed-loan
+    set interest interest + (proposed-loan * (interest-rate / 100))
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at " (ir-multiplier * 7.5) "% Interest Rate. \nGood credit score of: " current-credit-score
@@ -380,6 +387,7 @@ to evaluate-loan
     set total-loans-given total-loans-given + 1
     set prospected-returns prospected-returns + total-repayment
     set profit profit + total-repayment - proposed-loan
+    set interest interest + (proposed-loan * (interest-rate / 100))
     output-print (word "Customer no: " (customers-served + 1)
       "\nLoan of: $" current-loan-to-be-served
       "\ngiven at " (ir-multiplier * 10) "% Interest Rate. \nGood credit score of: " current-credit-score
@@ -403,64 +411,88 @@ to evaluate-loan
     file-type (word "Loan of $" current-loan-to-be-served " refused.\nEconomic state: " economic-conditions ".\n=======================================")
   ]
 
-  ; only record those who got the loan approved
-  if approved? [
-  set bankrupt-chance random-float 1.0
-  set paid-rate random-float 0.99
 
+; only record those who got the loan approved
+if approved? [
+
+  ; Variables
+  set bankrupt-chance random-float 1.0  ; Generate a random float between 0 and 1 for bankruptcy chance
+  set paid-rate random-float 0.99  ; Generate a random float between 0 and 0.99 for the paid rate
+
+  ; Check if the borrower goes bankrupt
   if bankrupt-chance < bankrupt-rate [
-    set num-bankrupt num-bankrupt + 1
-    set num-default num-default + 1
+    set num-bankrupt num-bankrupt + 1  ; Increment the count of bankrupted borrowers
+    set num-default num-default + 1  ; Increment the count of defaulted borrowers
 
-    if total-repayment * (paid-rate) - total-repayment < 0 [
-        set default-value default-value + total-repayment - total-repayment * (paid-rate)
-      ]
-    if total-repayment * (paid-rate) - proposed-loan < 0 [
-        set bank-loss bank-loss - total-repayment * (paid-rate) + proposed-loan
-        set profit profit + total-repayment * (paid-rate) - proposed-loan
-      ]
-    set bankrupted? true
+    ; Check if the default results in a loss for the bank
+    let loss-due-to-default (total-repayment * paid-rate) - proposed-loan
+
+    if loss-due-to-default < 0 [
+      set default-value default-value + loss-due-to-default  ; Record the default value
+      output-print (word "Bank loss due to default: $" loss-due-to-default "\n=======================================")  ; Print the bank loss
+    ]
+
+    ; Check if the default results in a loss or profit for the bank
+    if loss-due-to-default < 0 [
+      set bank-loss bank-loss - loss-due-to-default  ; Record the bank loss
+      set profit profit + loss-due-to-default  ; Record the profit
+    ]
+    set bankrupted? true  ; Set the flag indicating the borrower has gone bankrupt
   ]
 
+  ; Generate random chance of unemployment and spending rate
   set unemployment-chance random-float 1.0
   set spent-rate random-float 1.0
 
+  ; Check if the borrower faces unemployment
   if unemployment-chance < unemployment-rate - employment-stability [
-        set num-unemployment num-unemployment + 1
+    set num-unemployment num-unemployment + 1  ; Increment the count of unemployed borrowers
 
-  if not bankrupted?[
-      set proposed-collateral-value spent-rate * proposed-collateral-value
-      if total-repayment - total-repayment * (paid-rate) - proposed-collateral-value > 0 [
-        set num-default num-default + 1
-        set default-value default-value + total-repayment - total-repayment * (paid-rate) - proposed-collateral-value
+    ; Check if the borrower defaults and faces collateral devaluation
+    if not bankrupted? [
+      set proposed-collateral-value (spent-rate * proposed-collateral-value)  ; Adjust collateral value based on spending rate
+      if total-repayment - (total-repayment * paid-rate) - proposed-collateral-value > 0 [
+        set num-default num-default + 1  ; Increment the count of defaulted borrowers
+        set default-value default-value + (total-repayment - (total-repayment * paid-rate) - proposed-collateral-value) ; Record the default value
 
-        if total-repayment * (paid-rate) - proposed-loan + proposed-collateral-value < 0 [
-            set bank-loss bank-loss - total-repayment * (paid-rate) + proposed-loan - proposed-collateral-value
-            set profit profit + total-repayment * (paid-rate) - proposed-loan + proposed-collateral-value
-          ]
+        ; Check if the default results in a loss or profit for the bank
+        let loss-due-to-default (total-repayment * paid-rate) - proposed-loan + proposed-collateral-value
+        if loss-due-to-default < 0 [
+          set bank-loss bank-loss - loss-due-to-default  ; Record the bank loss
+          set profit profit + (loss-due-to-default)  ; Record the profit
+          output-print (word "Bank loss due to default: $" loss-due-to-default "\n=======================================")  ; Print the bank loss
         ]
-     ]
+      ]
+    ]
   ]
+]
 
-  ]
 
-  set customers-served customers-served + 1
-  set current-cycle-customers current-cycle-customers + 1
+; Update customer and cycle counters
+set customers-served customers-served + 1
+set current-cycle-customers current-cycle-customers + 1
 end
 
-to halt-simulation
-  set simulation-running? false
-
+to end-of-day-evaluation
+  output-print (word "Total Loans Given: " total-loans-given)
+  output-print (word "Expected Net Returns: $" (prospected-returns - gross-loan-amount))
+  output-print (word "Actual Net Returns: $" profit)
+  ifelse profit < 0 [
+    output-print ("BANKRUPT")
+  ][
+    output-print ("Profitable")
+  ]
+  output-print "Simulation Ended"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-679
-12
-1203
-537
+525
+10
+1081
+567
 -1
 -1
-15.64
+16.61
 1
 10
 1
@@ -481,10 +513,10 @@ ticks
 30.0
 
 BUTTON
-0
-13
-171
-125
+2
+12
+176
+127
 Open Bank
 Setup
 NIL
@@ -498,10 +530,10 @@ NIL
 1
 
 BUTTON
-170
-13
-331
-125
+174
+12
+348
+128
 NIL
 Go\n
 NIL
@@ -515,10 +547,10 @@ NIL
 1
 
 MONITOR
-500
-12
-679
-57
+346
+10
+525
+55
 Counter Busy
 counter1
 17
@@ -526,10 +558,10 @@ counter1
 11
 
 MONITOR
-500
-57
-679
-102
+346
+55
+525
+100
 5% Loans Given
 loans-given-with-ir-5
 17
@@ -537,10 +569,10 @@ loans-given-with-ir-5
 11
 
 MONITOR
-500
-146
-679
-191
+346
+144
+525
+189
 10% Loans Given
 loans-given-with-ir-10
 17
@@ -548,10 +580,10 @@ loans-given-with-ir-10
 11
 
 MONITOR
-500
-191
-679
-236
+346
+189
+525
+234
 Loans Refused
 loans-refused
 17
@@ -561,7 +593,7 @@ loans-refused
 PLOT
 0
 157
-499
+346
 327
 Loans
 NIL
@@ -579,38 +611,10 @@ PENS
 "7.5% Loans" 1.0 0 -10899396 true "" "plot loans-given-with-ir-7-5"
 "Loans Refused" 1.0 0 -7500403 true "" "plot loans-refused"
 
-BUTTON
-331
-13
-498
-124
-Close Bank
-halt-simulation
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-MONITOR
-500
-236
-679
-281
-Customers Served
-customers-served
-17
-1
-11
-
 SLIDER
 0
 124
-498
+346
 157
 quota
 quota
@@ -625,15 +629,15 @@ HORIZONTAL
 OUTPUT
 0
 496
-499
-722
+347
+726
 13
 
 SLIDER
-500
-504
-679
-537
+1083
+660
+1332
+694
 speed
 speed
 1
@@ -645,10 +649,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-500
-102
-679
-147
+346
+100
+525
+145
 7.5% Loans Given
 loans-given-with-ir-7-5
 17
@@ -656,10 +660,10 @@ loans-given-with-ir-7-5
 11
 
 MONITOR
-500
+346
+325
+525
 370
-679
-415
 Amount Given In Loans
 (word \"$\"gross-loan-amount)
 17
@@ -667,20 +671,20 @@ Amount Given In Loans
 11
 
 CHOOSER
-500
-459
-679
-504
+347
+683
+526
+728
 economic-conditions
 economic-conditions
 "Stable" "Recession" "Boom"
-2
+1
 
 MONITOR
-500
+346
+236
+525
 281
-679
-326
 Loans Given
 total-loans-given
 17
@@ -688,10 +692,10 @@ total-loans-given
 11
 
 MONITOR
-500
-326
-679
-371
+346
+280
+525
+325
 Loans Refused Ratio (%)
 round((loans-refused / customers-served) * 100)
 17
@@ -701,7 +705,7 @@ round((loans-refused / customers-served) * 100)
 PLOT
 0
 327
-499
+346
 496
 Ratio of Refused Loans
 NIL
@@ -714,24 +718,24 @@ true
 false
 "" ""
 PENS
-"Ratio" 1.0 0 -16777216 true "" "plot round((loans-refused / customers-served) * 100)"
+"Ratio" 1.0 0 -2674135 true "" "plot round((loans-refused / customers-served) * 100)"
 
 MONITOR
-500
+346
+368
+526
 414
-679
-459
-Total Repayment
+Expected Total Repayment
 (word \"$\" round(prospected-returns))
 17
 1
 11
 
 PLOT
-500
-537
-1203
-722
+527
+568
+1083
+727
 Bank's Total Returns ($)
 Revenue
 Time
@@ -743,13 +747,13 @@ false
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot prospected-returns"
+"default" 1.0 0 -13345367 true "" "plot prospected-returns"
 
 PLOT
-1206
-10
-1406
-160
+1083
+12
+1333
+147
 num bankrupt
 NIL
 NIL
@@ -761,13 +765,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot num-bankrupt"
+"default" 1.0 0 -2674135 true "" "plot num-bankrupt"
 
 MONITOR
-1407
-10
-1529
-55
+347
+458
+526
+504
 NIL
 num-bankrupt
 17
@@ -775,10 +779,10 @@ num-bankrupt
 11
 
 PLOT
-1205
-158
-1405
-308
+1083
+146
+1333
+276
 num unemployed
 NIL
 NIL
@@ -790,13 +794,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot num-unemployment"
+"default" 1.0 0 -2674135 true "" "plot num-unemployment"
 
 MONITOR
-1407
-54
-1530
-99
+347
+503
+527
+549
 NIL
 num-unemployment
 17
@@ -804,10 +808,10 @@ num-unemployment
 11
 
 MONITOR
-1406
-99
-1530
-144
+347
+548
+527
+594
 NIL
 num-default
 17
@@ -815,10 +819,10 @@ num-default
 11
 
 PLOT
-1206
-310
-1406
-460
+1083
+276
+1333
+406
 bank-loss
 NIL
 NIL
@@ -830,13 +834,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot bank-loss"
+"default" 1.0 0 -2674135 true "" "plot bank-loss"
 
 PLOT
-1206
-462
-1406
-610
+1083
+405
+1333
+533
 profit
 NIL
 NIL
@@ -848,24 +852,24 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot profit"
+"default" 1.0 0 -2674135 true "" "plot profit"
 
 MONITOR
-1408
-146
-1533
-191
-NIL
+348
+593
+527
+639
+Net Profit
 profit
 2
 1
 11
 
 PLOT
-1204
-612
-1404
-762
+1083
+533
+1333
+662
 default-value
 NIL
 NIL
@@ -877,44 +881,44 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot default-value"
+"default" 1.0 0 -2674135 true "" "plot default-value"
 
 MONITOR
-1408
-193
-1534
-238
-NIL
-bank-loss
-2
-1
-11
-
-MONITOR
-1406
-241
-1533
-286
-NIL
-default-value
+348
+637
+527
+683
+Defaulted Cash
+(word \"$\" bank-loss)
 2
 1
 11
 
 SLIDER
-0
-726
-194
-759
+1083
+694
+1332
+728
 carefulness
 carefulness
 0.01
 1.5
-0.01
+1.0
 0.01
 1
 NIL
 HORIZONTAL
+
+MONITOR
+347
+414
+526
+460
+Expected Net Profit
+(word \"$\" round (prospected-returns - gross-loan-amount))
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
